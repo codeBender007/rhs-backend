@@ -1,6 +1,6 @@
 
 import db from "../config/db.js";
-import sql from "mssql/msnodesqlv8.js";
+import sql from "mssql";
 
 /**
  * Helper to safely parse JSON strings or return the fallback

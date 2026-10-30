@@ -1,5 +1,5 @@
 import db from "../config/db.js";
-import sql from "mssql/msnodesqlv8.js";
+import sql from "mssql";
 
 export const MAX_QUERIES_PER_DATE = 50;
 

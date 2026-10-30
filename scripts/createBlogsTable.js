@@ -2,53 +2,64 @@ import "dotenv/config";
 import db from "../config/db.js";
 
 /**
- * Database Migration Script: Create Blogs Table
- * Creates the blogs table supporting both card previews and the complete article reader.
+ * Database Migration Script: Create Blogs Table in MSSQL
  */
 async function createBlogsTable() {
     try {
+        const pool = await db;
         const query = `
-            CREATE TABLE IF NOT EXISTS blogs (
-                id INT NOT NULL AUTO_INCREMENT,
-                title VARCHAR(255) NOT NULL,
-                slug VARCHAR(255) NOT NULL,
-                thumbnail_url VARCHAR(2048) DEFAULT NULL,
-                thumbnail_public_id VARCHAR(255) DEFAULT NULL,
-                category VARCHAR(100) DEFAULT NULL,
-                excerpt TEXT NOT NULL,
-                article_subtitle VARCHAR(500) DEFAULT NULL,
-                key_takeaways JSON DEFAULT NULL,
-                article_content LONGTEXT DEFAULT NULL,
-                article_sections JSON DEFAULT NULL,
-                benchmark_specs JSON DEFAULT NULL,
-                enquiry_cta JSON DEFAULT NULL,
-                author_name VARCHAR(150) DEFAULT NULL,
-                author_role VARCHAR(150) DEFAULT NULL,
-                author_avatar_url VARCHAR(2048) DEFAULT NULL,
-                author_avatar_public_id VARCHAR(255) DEFAULT NULL,
-                published_at VARCHAR(100) DEFAULT NULL,
-                reading_time VARCHAR(50) DEFAULT NULL,
-                read_count INT NOT NULL DEFAULT 0,
-                is_featured TINYINT(1) NOT NULL DEFAULT 0,
-                is_active TINYINT(1) NOT NULL DEFAULT 0,
-                created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                deleted_at TIMESTAMP NULL DEFAULT NULL,
-                PRIMARY KEY (id),
-                UNIQUE KEY uk_blogs_slug (slug),
-                INDEX idx_blogs_active (is_active, deleted_at),
-                INDEX idx_blogs_featured (is_featured),
-                INDEX idx_blogs_created (created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+            IF OBJECT_ID(N'dbo.blogs', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.blogs (
+                    id INT IDENTITY(1,1) NOT NULL,
+                    title NVARCHAR(255) NOT NULL,
+                    slug NVARCHAR(255) NOT NULL,
+                    thumbnail_url NVARCHAR(MAX) NULL,
+                    thumbnail_public_id NVARCHAR(255) NULL,
+                    category NVARCHAR(255) NULL,
+                    excerpt NVARCHAR(MAX) NOT NULL,
+                    article_subtitle NVARCHAR(MAX) NULL,
+                    key_takeaways NVARCHAR(MAX) NULL,
+                    article_content NVARCHAR(MAX) NULL,
+                    article_sections NVARCHAR(MAX) NULL,
+                    benchmark_specs NVARCHAR(MAX) NULL,
+                    enquiry_cta NVARCHAR(MAX) NULL,
+                    author_name NVARCHAR(255) NULL,
+                    author_role NVARCHAR(255) NULL,
+                    author_avatar_url NVARCHAR(MAX) NULL,
+                    author_avatar_public_id NVARCHAR(255) NULL,
+                    published_at DATETIME2(7) NULL,
+                    reading_time NVARCHAR(100) NULL,
+                    read_count INT NOT NULL CONSTRAINT DF_blogs_read_count DEFAULT 0,
+                    is_featured BIT NOT NULL CONSTRAINT DF_blogs_is_featured DEFAULT 0,
+                    is_active BIT NOT NULL CONSTRAINT DF_blogs_is_active DEFAULT 0,
+                    created_at DATETIME2(7) NOT NULL CONSTRAINT DF_blogs_created_at DEFAULT SYSDATETIME(),
+                    updated_at DATETIME2(7) NULL,
+                    deleted_at DATETIME2(7) NULL,
+                    CONSTRAINT PK_blogs PRIMARY KEY CLUSTERED (id ASC),
+                    CONSTRAINT UQ_blogs_slug UNIQUE NONCLUSTERED (slug ASC)
+                );
+
+                CREATE NONCLUSTERED INDEX idx_blogs_deleted_active
+                    ON dbo.blogs (deleted_at, is_active)
+                    INCLUDE (is_featured, created_at, id, title, slug, category);
+
+                CREATE NONCLUSTERED INDEX idx_blogs_featured_created
+                    ON dbo.blogs (is_featured DESC, created_at DESC, id DESC);
+
+                PRINT 'Blogs table created successfully.';
+            END
+            ELSE
+            BEGIN
+                PRINT 'Blogs table already exists.';
+            END
         `;
 
-        await db.execute(query);
-        console.log("Blogs table created or verified successfully.");
+        await pool.request().query(query);
+        console.log("Blogs table verified successfully in MSSQL.");
     } catch (error) {
         console.error("Failed to create blogs table:", error.message);
         process.exitCode = 1;
-    } finally {
-        await db.end();
     }
 }
 

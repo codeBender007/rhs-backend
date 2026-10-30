@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -5,8 +6,8 @@ import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 
-const envPath = fileURLToPath(new URL("./.env", import.meta.url));
-dotenv.config({ path: envPath });
+
+
 
 import db from "./config/db.js";
 import testRoutes from "./routes/test.routes.js";
